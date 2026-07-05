@@ -1,4 +1,5 @@
 import streamlit as st
+from utils.pdf_processor import extract_text_from_pdf
 
 st.set_page_config(page_title="AskMyNotes", page_icon="📚", layout="wide")
 st.info("💡 Upload one or more PDFs to enable question answering.")
@@ -37,5 +38,27 @@ with question_container:
         use_container_width=True,
         disabled=len(uploaded_files) == 0
         )
+if get_answer:
+
+    if not uploaded_files:
+        st.warning("Please upload at least one PDF.")
+
+    else:
+
+        for pdf in uploaded_files:
+
+            extracted_text = extract_text_from_pdf(pdf)
+
+            st.subheader(f"📄 {pdf.name}")
+
+            if extracted_text.strip():
+                st.text_area(
+                    label="Extracted Text",
+                    value=extracted_text,
+                    height=300,
+                    key=pdf.name
+                )
+            else:
+                st.warning(f"⚠️ No readable text found in **{pdf.name}**. The PDF may be scanned or empty.")
 
     
