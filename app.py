@@ -1,6 +1,7 @@
 import streamlit as st
 from utils.pdf_processor import extract_text_from_pdf
 from utils.text_chunker import clean_text, chunk_text
+from utils.embeddings import generate_embeddings
 
 st.set_page_config(page_title="AskMyNotes", page_icon="📚", layout="wide")
 st.info("💡 Upload one or more PDFs to enable question answering.")
@@ -53,8 +54,12 @@ if get_answer:
             if extracted_text.strip():
                 cleaned_text = clean_text(extracted_text)
                 chunks = chunk_text(cleaned_text)
+                embeddings = generate_embeddings(chunks)
                 st.subheader(f"📄 {pdf.name}")
                 st.success(f"Total Chunks Created: {len(chunks)}")
+                st.info(f"🧠 Embeddings Generated: {len(embeddings)}")
+                st.write("Embedding Shape:", embeddings.shape)
+                st.write(embeddings[0][:10])  # Display first 10 dimensions of the first embedding
 
                 for i, chunk in enumerate(chunks):
                     with st.expander(f"Chunk {i + 1}",expanded=False):
