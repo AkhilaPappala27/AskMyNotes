@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.pdf_processor import extract_text_from_pdf
+from utils.text_chunker import clean_text, chunk_text
 
 st.set_page_config(page_title="AskMyNotes", page_icon="📚", layout="wide")
 st.info("💡 Upload one or more PDFs to enable question answering.")
@@ -49,15 +50,20 @@ if get_answer:
 
             extracted_text = extract_text_from_pdf(pdf)
 
-            st.subheader(f"📄 {pdf.name}")
-
             if extracted_text.strip():
-                st.text_area(
-                    label="Extracted Text",
-                    value=extracted_text,
-                    height=300,
-                    key=pdf.name
-                )
+                cleaned_text = clean_text(extracted_text)
+                chunks = chunk_text(cleaned_text)
+                st.subheader(f"📄 {pdf.name}")
+                st.success(f"Total Chunks Created: {len(chunks)}")
+
+                for i, chunk in enumerate(chunks):
+                    with st.expander(f"Chunk {i + 1}",expanded=False):
+                        st.text_area(
+                            label='',
+                            value=chunk,
+                            height=180,
+                            key=f"{pdf.name}_chunk_{i + 1}"
+                        )
             else:
                 st.warning(f"⚠️ No readable text found in **{pdf.name}**. The PDF may be scanned or empty.")
 
