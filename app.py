@@ -1,7 +1,8 @@
 import streamlit as st
 from utils.pdf_processor import extract_text_from_pdf
 from utils.text_chunker import clean_text, chunk_text
-from utils.embeddings import generate_embeddings
+from utils.embeddings import (generate_embeddings, generate_query_embedding)
+from utils.faiss_index import (build_vector_store, search_vector_store)
 
 st.set_page_config(page_title="AskMyNotes", page_icon="📚", layout="wide")
 st.info("💡 Upload one or more PDFs to enable question answering.")
@@ -38,7 +39,7 @@ with question_container:
         get_answer = st.button(
         "🚀 Get Answer",
         use_container_width=True,
-        disabled=len(uploaded_files) == 0
+        disabled=not uploaded_files
         )
 if get_answer:
 
@@ -54,20 +55,48 @@ if get_answer:
             if extracted_text.strip():
                 cleaned_text = clean_text(extracted_text)
                 chunks = chunk_text(cleaned_text)
+                chunks = [chunk for chunk in chunks if chunk.strip()]
                 embeddings = generate_embeddings(chunks)
+                index, stored_chunks = build_vector_store(
+                                        chunks,
+                                        embeddings
+                                    )
+                if question.strip():
+
+                    query_embedding = generate_query_embedding(question)
+                    #st.write("Query Embedding Shape:", query_embedding.shape)
+                    retrieved_chunks = search_vector_store(
+                        index,
+                        query_embedding,
+                        stored_chunks
+                    )
+
+                    st.subheader("🔍 Most Relevant Sections")
+
+                    for i, chunk in enumerate(retrieved_chunks):
+
+                        with st.expander(f"Result {i+1}"):
+
+                            st.write(chunk)
+                else:
+                    st.warning("Please enter a question to get an answer.")
+
                 st.subheader(f"📄 {pdf.name}")
-                st.success(f"Total Chunks Created: {len(chunks)}")
-                st.info(f"🧠 Embeddings Generated: {len(embeddings)}")
-                st.write("Embedding Shape:", embeddings.shape)
-                st.write(embeddings[0][:10])  # Display first 10 dimensions of the first embedding
+                #st.success(f"Total Chunks Created: {len(chunks)}")
+                #st.info(f"🧠 Embeddings Generated: {len(embeddings)}")
+                #st.write("Embedding Shape:", embeddings.shape)
+                #st.success("✅ FAISS Vector Store Created")
+                #st.write("Vectors Stored:", index.ntotal)
+                #st.write(embeddings[0][:10])  # Display first 10 dimensions of the first embedding
 
                 for i, chunk in enumerate(chunks):
                     with st.expander(f"Chunk {i + 1}",expanded=False):
                         st.text_area(
-                            label='',
+                            label='Chunk Content',
                             value=chunk,
                             height=180,
-                            key=f"{pdf.name}_chunk_{i + 1}"
+                            key=f"{pdf.name}_chunk_{i + 1}",
+                            label_visibility="collapsed"
                         )
             else:
                 st.warning(f"⚠️ No readable text found in **{pdf.name}**. The PDF may be scanned or empty.")

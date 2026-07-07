@@ -25,3 +25,22 @@ def generate_embeddings(chunks):
     )
 
     return embeddings
+
+def generate_query_embedding(question):
+    """
+    Converts a question into a vector embedding.
+
+    Args:
+        question (str): The user's question.
+
+    Returns:
+        query_embedding: Vector representation of the question.
+    """
+
+    model = load_embedding_model()
+    query_embedding = model.encode(
+        [question],
+        convert_to_numpy=True
+    )
+
+    return query_embedding
