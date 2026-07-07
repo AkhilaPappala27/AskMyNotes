@@ -3,6 +3,7 @@ from utils.pdf_processor import extract_text_from_pdf
 from utils.text_chunker import clean_text, chunk_text
 from utils.embeddings import (generate_embeddings, generate_query_embedding)
 from utils.faiss_index import (build_vector_store, search_vector_store)
+from utils.gemini_helper import generate_answer
 
 st.set_page_config(page_title="AskMyNotes", page_icon="📚", layout="wide")
 st.info("💡 Upload one or more PDFs to enable question answering.")
@@ -71,11 +72,19 @@ if get_answer:
                         stored_chunks
                     )
 
+                    answer = generate_answer(
+                        question,
+                        retrieved_chunks
+                    )
+
+                    st.subheader("🤖 AI Answer")
+
+                    st.success(answer)
                     st.subheader("🔍 Most Relevant Sections")
 
                     for i, chunk in enumerate(retrieved_chunks):
 
-                        with st.expander(f"Result {i+1}"):
+                        with st.expander(f"Result {i + 1}"):
 
                             st.write(chunk)
                 else:
